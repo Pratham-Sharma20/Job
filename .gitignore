@@ -1,0 +1,25 @@
+# Environment variables — never commit secrets
+.env
+.env.*
+*.env
+backend\venv\pyvenv.cfg
+
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+.Python
+
+# Virtual environments
+venv/
+env/
+.venv/
+
+# IDEs
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db
