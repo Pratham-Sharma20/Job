@@ -11,7 +11,7 @@ function JobCard({ job }) {
       <p className="location">{job.location || "Location not specified"}</p>
       <p className="source">Source: {job.source}</p>
 
-      <a href={job.link} target="_blank" rel="noreferrer">
+      <a href={job.link || job.apply_link} target="_blank" rel="noreferrer">
         View Job →
       </a>
     </div>

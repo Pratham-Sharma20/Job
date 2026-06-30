@@ -6,6 +6,7 @@
   position: sticky;
   top: 0;
   height: 100vh;
+  overflow-y: auto;
 }
 
 .sidebar h2 {
@@ -18,6 +19,45 @@
   margin-top: 12px;
   color: #76685c;
   line-height: 1.5;
+}
+
+.filter-section {
+  margin-top: 40px;
+}
+
+.filter-section h3 {
+  font-size: 14px;
+  text-transform: uppercase;
+  color: #7c4a2d;
+  letter-spacing: 0.5px;
+  margin-bottom: 16px;
+}
+
+.checkbox-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.checkbox-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  font-size: 15px;
+  color: #5c4e43;
+  transition: color 0.2s;
+}
+
+.checkbox-label:hover {
+  color: #2c1a10;
+}
+
+.checkbox-label input[type="checkbox"] {
+  width: 16px;
+  height: 16px;
+  cursor: pointer;
+  accent-color: #7c4a2d;
 }
 
 @media (max-width: 800px) {

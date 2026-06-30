@@ -8,7 +8,7 @@ logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(message)s')
 
 def run_scrapers():
     logging.info("Starting scheduled scrape job...")
-    scraping_scripts = ["test.py", "ms.py", "google.py", "get_api.py"]
+    scraping_scripts = ["test.py", "ms.py", "google.py", "get_api.py", "custom_scrape.py"]
     
     for script in scraping_scripts:
         logging.info(f"Running {script}...")

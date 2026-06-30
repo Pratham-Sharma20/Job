@@ -8,6 +8,7 @@ import "./App.css";
 function App() {
   const [jobs, setJobs] = useState([]);
   const [search, setSearch] = useState("");
+  const [selectedCompanies, setSelectedCompanies] = useState([]);
   const [loading, setLoading] = useState(true);
   
   // Pagination state
@@ -15,11 +16,16 @@ function App() {
   const jobsPerPage = 12;
 
   useEffect(() => {
-    const backendUrl = import.meta.env.VITE_BACKEND_URL || "http://localhost:5000";
+    const backendUrl = /*import.meta.env.VITE_BACKEND_URL ||*/ "http://localhost:5000";
     fetch(`${backendUrl}/jobs`)
       .then((res) => res.json())
       .then((data) => {
-        setJobs(data);
+        if (Array.isArray(data)) {
+          setJobs(data);
+        } else {
+          console.error("Expected an array but got:", data);
+          setJobs([]);
+        }
         setLoading(false);
       })
       .catch((err) => {
@@ -28,12 +34,20 @@ function App() {
       });
   }, []);
 
-  // Reset to first page when search changes
+  // Reset to first page when search or filter changes
   useEffect(() => {
     setCurrentPage(1);
-  }, [search]);
+  }, [search, selectedCompanies]);
+
+  const uniqueCompanies = Array.from(new Set(jobs.map((job) => job.company))).sort();
 
   const filteredJobs = jobs.filter((job) => {
+    // Check company filter
+    if (selectedCompanies.length > 0 && !selectedCompanies.includes(job.company)) {
+      return false;
+    }
+    
+    // Check text search
     const text = `${job.company} ${job.title} ${job.location} ${job.source}`.toLowerCase();
     return text.includes(search.toLowerCase());
   });
@@ -46,7 +60,11 @@ function App() {
 
   return (
     <div className="app">
-      <Sidebar />
+      <Sidebar 
+        companies={uniqueCompanies} 
+        selectedCompanies={selectedCompanies} 
+        setSelectedCompanies={setSelectedCompanies} 
+      />
       <main className="main">
         <Hero search={search} setSearch={setSearch} />
         <JobList jobs={currentJobs} loading={loading} />
