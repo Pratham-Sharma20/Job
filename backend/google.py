@@ -171,7 +171,7 @@ async def scrape_google_jobs_all_pages():
     seen = set()
 
     async with async_playwright() as p:
-        browser = await p.chromium.launch(headless=False)
+        browser = await p.chromium.launch(headless=True)
         page = await browser.new_page()
 
         await page.goto(URL, wait_until="networkidle", timeout=60000)
