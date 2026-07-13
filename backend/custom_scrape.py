@@ -3,6 +3,7 @@ import json
 import time
 from datetime import datetime
 from db import jobs_collection
+from notifier import send_telegram_notification
 
 def extract_json_object(text, start_index):
     """Extracts a JSON object from text starting at start_index by matching braces."""
@@ -65,7 +66,7 @@ def save_to_database(jobs):
             "scraped_at": datetime.now().isoformat(timespec="seconds"),
         }
 
-        jobs_collection.update_one(
+        result = jobs_collection.update_one(
             {
                 "company": "Adobe",
                 "job_id": unique_id,
@@ -75,6 +76,9 @@ def save_to_database(jobs):
             },
             upsert=True,
         )
+
+        if result.upserted_id or result.matched_count == 0:
+            send_telegram_notification(formatted_job)
 
         saved_count += 1
 

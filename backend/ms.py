@@ -5,6 +5,7 @@ import re
 from datetime import datetime
 from urllib.parse import urljoin
 from db import jobs_collection
+from notifier import send_telegram_notification
 
 BASE_URL = "https://apply.careers.microsoft.com/api/pcsx/search"
 
@@ -409,7 +410,7 @@ def save_to_database(jobs):
             unique_id = f"{job['company']}-{job['title']}-{job['location']}-{job['apply_link']}"
             job["job_id"] = unique_id
 
-        jobs_collection.update_one(
+        result = jobs_collection.update_one(
             {
                 "company": job["company"],
                 "job_id": unique_id,
@@ -419,6 +420,9 @@ def save_to_database(jobs):
             },
             upsert=True,
         )
+
+        if result.upserted_id or result.matched_count == 0:
+            send_telegram_notification(job)
 
         saved_count += 1
 

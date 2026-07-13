@@ -16,7 +16,7 @@ function App() {
   const jobsPerPage = 12;
 
   useEffect(() => {
-    const backendUrl = /*import.meta.env.VITE_BACKEND_URL ||*/ "http://localhost:5000";
+    const backendUrl = import.meta.env.VITE_BACKEND_URL || "http://localhost:5000";
     fetch(`${backendUrl}/jobs`)
       .then((res) => res.json())
       .then((data) => {

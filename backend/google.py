@@ -6,6 +6,7 @@ import pandas as pd
 import re
 from datetime import datetime
 from db import jobs_collection
+from notifier import send_telegram_notification
 
 URL = "https://www.google.com/about/careers/applications/jobs/results?location=India&target_level=INTERN_AND_APPRENTICE&target_level=EARLY&employment_type=INTERN&employment_type=FULL_TIME"
 
@@ -234,7 +235,7 @@ def save_to_database(jobs):
             "scraped_at": datetime.now().isoformat(timespec="seconds"),
         }
 
-        jobs_collection.update_one(
+        result = jobs_collection.update_one(
             {
                 "job_id": unique_id,
                 "source": "Google Careers"
@@ -244,6 +245,10 @@ def save_to_database(jobs):
             },
             upsert=True,
         )
+
+        if result.upserted_id or result.matched_count == 0:
+            send_telegram_notification(db_job)
+
         saved_count += 1
 
     print(f"Successfully saved {saved_count} jobs to the database.")
