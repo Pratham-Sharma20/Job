@@ -39,5 +39,5 @@ jobs:
         cd backend
         python ms.py
         python google.py
-        python get_api.py
         python custom_scrape.py
+        python test.py

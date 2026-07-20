@@ -1,7 +1,8 @@
 import requests
 from urllib.parse import quote_plus
 from datetime import datetime
-from db import jobs_collection  # Fixed: was "from backend.db import jobs_collection"
+from db import jobs_collection
+from notifier import send_telegram_notification
 
 keywords = [
     "intern", "internship", "new grad", "graduate",
@@ -17,20 +18,33 @@ def save_job(company, title, location, link, source):
     if not title or not link:
         return
 
+    # Use link as job_id because job URLs on Greenhouse/Lever/Workday/Amazon are strictly unique per position
+    job_id = link
+
     job = {
+        "job_id": job_id,
         "company": company,
         "title": title,
         "location": location,
-        "link": link,
+        "apply_link": link,
+        "posted_date": "",
+        "work_site": "",
+        "profession": "",
+        "discipline": "",
+        "employment_type": "",
+        "description": "",
         "source": source,
-        "scraped_at": datetime.utcnow()  # Fixed: use UTC for consistency
+        "scraped_at": datetime.now().isoformat(timespec="seconds"),
     }
 
-    jobs_collection.update_one(
-        {"link": link},
+    result = jobs_collection.update_one(
+        {"company": company, "job_id": job_id},
         {"$set": job},
-        upsert=True
+        upsert=True,
     )
+
+    if result.upserted_id is not None:
+        send_telegram_notification(job)
 
 def scrape_amazon():
     queries = [

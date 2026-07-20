@@ -75,13 +75,30 @@ def extract_min_qualifications(full_text):
     return ""
 
 
-def get_job_link(card):
+def get_job_link(card, h3_tag=None):
     links = card.find_all("a", href=True)
 
+    # Primary: match job detail URLs with a numeric ID
     for link in links:
         href = link["href"]
+        if re.search(r"/jobs/results/\d+", href):
+            return urljoin("https://www.google.com", href)
 
-        if "/about/careers/applications/jobs/results/" in href:
+    # Try the h3's parent <a> tag directly
+    if h3_tag:
+        parent_a = h3_tag.find_parent("a", href=True)
+        if parent_a:
+            href = parent_a["href"]
+            if href and href != "#":
+                return urljoin("https://www.google.com", href)
+
+    # Broader: any careers application link that isn't the search page
+    for link in links:
+        href = link["href"]
+        if "/careers/applications/" in href and href != "#":
+            normalized = href.rstrip("/")
+            if normalized.endswith("/results") or normalized.endswith("/jobs"):
+                continue
             return urljoin("https://www.google.com", href)
 
     return ""
@@ -128,7 +145,7 @@ def scrape_jobs_from_html(html):
             "location": extract_location(full_text),
             "level": extract_level(full_text),
             "minimum_qualifications": extract_min_qualifications(full_text),
-            "link": get_job_link(card),
+            "link": get_job_link(card, h3),
         }
 
         jobs.append(job)

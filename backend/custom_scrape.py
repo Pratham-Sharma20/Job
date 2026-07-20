@@ -234,7 +234,7 @@ def scrape_apple_jobs():
         from db import jobs_collection
         saved_count = 0
         for job in scraped_jobs:
-            jobs_collection.update_one(
+            result = jobs_collection.update_one(
                 {
                     "company": "Apple",
                     "job_id": job["job_id"],
@@ -244,6 +244,8 @@ def scrape_apple_jobs():
                 },
                 upsert=True,
             )
+            if result.upserted_id or result.matched_count == 0:
+                send_telegram_notification(job)
             saved_count += 1
         print(f"Successfully saved {saved_count} Apple jobs to the database.")
     else:

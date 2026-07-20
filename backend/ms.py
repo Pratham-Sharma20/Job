@@ -455,31 +455,32 @@ def debug_filtering(all_jobs):
     print("Rejected by filter:", rejected)
 
 
-all_jobs = scrape_all_india_jobs()
+if __name__ == "__main__":
+    all_jobs = scrape_all_india_jobs()
 
-debug_filtering(all_jobs)
+    debug_filtering(all_jobs)
 
-filtered_jobs = [
-    job for job in all_jobs
-    if is_software_or_early_job(job)
-]
+    filtered_jobs = [
+        job for job in all_jobs
+        if is_software_or_early_job(job)
+    ]
 
-jobs_to_save = filtered_jobs if SAVE_FILTERED_ONLY else all_jobs
+    jobs_to_save = filtered_jobs if SAVE_FILTERED_ONLY else all_jobs
 
-save_to_database(jobs_to_save)
+    save_to_database(jobs_to_save)
 
-print("\nSummary")
-print("-" * 80)
-print("Total India jobs scraped:", len(all_jobs))
-print("Software / early-career jobs found:", len(filtered_jobs))
-print("Jobs saved to database:", len(jobs_to_save))
-
-print("\nSaved jobs:")
-for job in jobs_to_save:
+    print("\nSummary")
     print("-" * 80)
-    print("Title:", job["title"])
-    print("Location:", job["location"])
-    print("Profession:", job["profession"])
-    print("Discipline:", job["discipline"])
-    print("Posted:", job["posted_date"])
-    print("Link:", job["apply_link"])
+    print("Total India jobs scraped:", len(all_jobs))
+    print("Software / early-career jobs found:", len(filtered_jobs))
+    print("Jobs saved to database:", len(jobs_to_save))
+
+    print("\nSaved jobs:")
+    for job in jobs_to_save:
+        print("-" * 80)
+        print("Title:", job["title"])
+        print("Location:", job["location"])
+        print("Profession:", job["profession"])
+        print("Discipline:", job["discipline"])
+        print("Posted:", job["posted_date"])
+        print("Link:", job["apply_link"])
