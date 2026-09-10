@@ -14,9 +14,19 @@ def is_early(title):
     title = title.lower()
     return any(k in title for k in keywords)
 
-def save_job(company, title, location, link, source):
+def save_job(company, title, location, link, source, country=""):
     if not title or not link:
         return
+
+    # If company is Amazon, strictly ensure country is India
+    if company.lower() == "amazon":
+        is_india = (
+            country.lower() in ["india", "ind", "in"]
+            or "india" in location.lower()
+            or location.strip().upper().endswith("IND")
+        )
+        if not is_india:
+            return
 
     # Use link as job_id because job URLs on Greenhouse/Lever/Workday/Amazon are strictly unique per position
     job_id = link
@@ -26,6 +36,7 @@ def save_job(company, title, location, link, source):
         "company": company,
         "title": title,
         "location": location,
+        "country": country,
         "apply_link": link,
         "posted_date": "",
         "work_site": "",
@@ -57,7 +68,7 @@ def scrape_amazon():
     for q in queries:
         url = (
             "https://www.amazon.jobs/en/search.json?"
-            f"base_query={quote_plus(q)}&loc_query=India&result_limit=100&offset=0"
+            f"base_query={quote_plus(q)}&loc_query=India&country=IND&result_limit=100&offset=0"
         )
 
         try:
@@ -66,8 +77,26 @@ def scrape_amazon():
             data = res.json()
 
             for job in data.get("jobs", []):
+                # Verify that the job is located in India
+                country_code = str(job.get("country_code") or "").strip().upper()
+                job_country = str(job.get("country") or "").strip().lower()
+                normalized_location = str(job.get("normalized_location") or "").strip()
+                location_str = str(job.get("location") or "").strip().lower()
+
+                is_india = (
+                    country_code in ["IND", "IN"]
+                    or job_country in ["india", "ind", "in"]
+                    or normalized_location.upper().endswith("IND")
+                    or "india" in normalized_location.lower()
+                    or "india" in location_str
+                    or location_str.startswith("in,")
+                )
+
+                if not is_india:
+                    continue
+
                 title = job.get("title", "")
-                location = job.get("normalized_location", "")
+                location = normalized_location or job.get("location", "")
                 job_path = job.get("job_path", "")
                 # Avoid double slashes if job_path doesn't start with "/"
                 if job_path and not job_path.startswith("/"):
@@ -75,7 +104,7 @@ def scrape_amazon():
                 link = "https://www.amazon.jobs" + job_path
 
                 if is_early(title):
-                    save_job("Amazon", title, location, link, "Amazon API")
+                    save_job("Amazon", title, location, link, "Amazon API", country="India")
 
         except requests.HTTPError as e:
             print("Amazon HTTP error:", e)

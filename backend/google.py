@@ -9,6 +9,7 @@ from db import jobs_collection
 from notifier import send_telegram_notification
 
 URL = "https://www.google.com/about/careers/applications/jobs/results?location=India&target_level=INTERN_AND_APPRENTICE&target_level=EARLY&employment_type=INTERN&employment_type=FULL_TIME"
+BASE_CAREERS_URL = "https://www.google.com/about/careers/applications/"
 
 
 def clean_text(text):
@@ -75,37 +76,57 @@ def extract_min_qualifications(full_text):
     return ""
 
 
-def get_job_link(card, h3_tag=None):
+def get_job_link(card, h3_tag=None, base_url=BASE_CAREERS_URL):
     links = card.find_all("a", href=True)
 
     # Primary: match job detail URLs with a numeric ID
     for link in links:
-        href = link["href"]
-        if re.search(r"/jobs/results/\d+", href):
-            return urljoin("https://www.google.com", href)
+        href = link["href"].strip()
+        if not href or href == "#":
+            continue
+        if re.search(r"jobs/results/\d+", href):
+            clean_href = href.split("?")[0]
+            if clean_href.startswith("http://") or clean_href.startswith("https://"):
+                return clean_href
+            if clean_href.startswith("/about/careers/applications/"):
+                return urljoin("https://www.google.com", clean_href)
+            if clean_href.startswith("/"):
+                return urljoin("https://www.google.com/about/careers/applications", clean_href)
+            return urljoin(base_url, clean_href)
+
+    # Check for any link with aria-label indicating job details (e.g. 'Learn more about...')
+    for link in links:
+        aria_label = link.get("aria-label", "")
+        if "Learn more about" in aria_label:
+            clean_href = link["href"].strip().split("?")[0]
+            return urljoin(base_url, clean_href)
 
     # Try the h3's parent <a> tag directly
     if h3_tag:
         parent_a = h3_tag.find_parent("a", href=True)
         if parent_a:
-            href = parent_a["href"]
+            href = parent_a["href"].strip()
             if href and href != "#":
-                return urljoin("https://www.google.com", href)
+                clean_href = href.split("?")[0]
+                return urljoin(base_url, clean_href)
 
     # Broader: any careers application link that isn't the search page
     for link in links:
-        href = link["href"]
-        if "/careers/applications/" in href and href != "#":
-            normalized = href.rstrip("/")
+        href = link["href"].strip()
+        if ("/careers/applications/" in href or "jobs/results" in href) and href != "#":
+            clean_href = href.split("?")[0]
+            normalized = clean_href.rstrip("/")
             if normalized.endswith("/results") or normalized.endswith("/jobs"):
                 continue
-            return urljoin("https://www.google.com", href)
+            return urljoin(base_url, clean_href)
 
     return ""
 
 
 def scrape_jobs_from_html(html):
     soup = BeautifulSoup(html, "html.parser")
+    base_tag = soup.find("base", href=True)
+    base_url = base_tag["href"] if base_tag else BASE_CAREERS_URL
 
     jobs = []
 
@@ -145,7 +166,7 @@ def scrape_jobs_from_html(html):
             "location": extract_location(full_text),
             "level": extract_level(full_text),
             "minimum_qualifications": extract_min_qualifications(full_text),
-            "link": get_job_link(card, h3),
+            "link": get_job_link(card, h3, base_url),
         }
 
         jobs.append(job)
@@ -252,18 +273,23 @@ def save_to_database(jobs):
             "scraped_at": datetime.now().isoformat(timespec="seconds"),
         }
 
-        result = jobs_collection.update_one(
-            {
-                "job_id": unique_id,
-                "source": "Google Careers"
-            },
-            {
-                "$set": db_job
-            },
-            upsert=True,
-        )
+        fallback_id = f"{job['company']}-{job['title']}-{job['location']}"
+        existing = jobs_collection.find_one({
+            "source": "Google Careers",
+            "$or": [
+                {"job_id": unique_id},
+                {"job_id": fallback_id},
+                {"company": job["company"], "title": job["title"], "location": job["location"]},
+            ]
+        })
 
-        if result.upserted_id or result.matched_count == 0:
+        if existing:
+            jobs_collection.update_one(
+                {"_id": existing["_id"]},
+                {"$set": db_job}
+            )
+        else:
+            jobs_collection.insert_one(db_job)
             send_telegram_notification(db_job)
 
         saved_count += 1
