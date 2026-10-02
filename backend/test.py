@@ -22,6 +22,22 @@ from scrapers.zepto import scrape_zepto
 from scrapers.myntra import scrape_myntra
 from scrapers.juspay import scrape_juspay
 from scrapers.eternal import scrape_eternal
+from scrapers.meta import scrape_meta
+from scrapers.amd import scrape_amd
+from scrapers.qualcomm import scrape_qualcomm
+from scrapers.oracle import scrape_oracle
+from scrapers.cisco import scrape_cisco
+from scrapers.atlassian import scrape_atlassian
+from scrapers.uber import scrape_uber
+from scrapers.linkedin import scrape_linkedin
+from scrapers.servicenow import scrape_servicenow
+from scrapers.intuit import scrape_intuit
+from scrapers.netflix import scrape_netflix
+from scrapers.snowflake import scrape_snowflake
+from scrapers.sap import scrape_sap
+from scrapers.micron import scrape_micron
+from scrapers.paypal import scrape_paypal
+from scrapers.zoom import scrape_zoom
 
 
 def scrape_amazon(metrics: Optional[PipelineMetrics] = None):
@@ -97,6 +113,22 @@ def run_all_scrapers() -> List[PipelineMetrics]:
         ("Juspay", scrape_juspay),
         ("Eternal", scrape_eternal),
         ("Amazon", scrape_amazon),
+        ("Meta", scrape_meta),
+        ("AMD", scrape_amd),
+        ("Qualcomm", scrape_qualcomm),
+        ("Oracle", scrape_oracle),
+        ("Cisco", scrape_cisco),
+        ("Atlassian", scrape_atlassian),
+        ("Uber", scrape_uber),
+        ("LinkedIn", scrape_linkedin),
+        ("ServiceNow", scrape_servicenow),
+        ("Intuit", scrape_intuit),
+        ("Netflix", scrape_netflix),
+        ("Snowflake", scrape_snowflake),
+        ("SAP", scrape_sap),
+        ("Micron", scrape_micron),
+        ("PayPal", scrape_paypal),
+        ("Zoom", scrape_zoom),
     ]
 
     for name, scraper_fn in custom_scrapers:
@@ -130,6 +162,8 @@ def run_all_scrapers() -> List[PipelineMetrics]:
                     site=config["site"],
                     search_queries=config.get("search_queries"),
                     country_facets=config.get("country_facets"),
+                    facet_param=config.get("facet_param"),
+                    applied_facets=config.get("applied_facets"),
                     metrics=m
                 )
         except Exception as e:

@@ -3,7 +3,8 @@ from flask import Flask, jsonify
 from flask_cors import CORS
 from db import jobs_collection
 from pymongo.errors import PyMongoError
-from scheduler import start_scheduler_thread
+from scheduler import start_scheduler_thread, run_scrapers
+import threading
 
 app = Flask(__name__)
 CORS(app)
@@ -14,6 +15,15 @@ start_scheduler_thread()
 def home():
     return jsonify({
         "message": "Job scraper backend is running"
+    })
+
+@app.route("/scrape", methods=["POST", "GET"])
+def trigger_scrape():
+    """Trigger scrapers execution asynchronously."""
+    threading.Thread(target=run_scrapers, daemon=True).start()
+    return jsonify({
+        "status": "triggered",
+        "message": "Scraping pipeline started in background thread"
     })
 
 @app.route("/jobs", methods=["GET"])

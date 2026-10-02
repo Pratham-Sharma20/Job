@@ -14,13 +14,16 @@ def scrape_workday_instance(
     site: str,
     search_queries: Optional[List[str]] = None,
     country_facets: Optional[List[str]] = None,
+    facet_param: Optional[str] = "locationCountry",
+    applied_facets: Optional[Dict[str, Any]] = None,
     metrics: Optional[PipelineMetrics] = None
 ):
     """Scrapes a Workday career instance and forwards raw jobs to pipeline."""
     if metrics is None:
         metrics = PipelineMetrics(f"{company} (Workday)")
 
-    url = f"{host}/wday/cxs/{tenant}/{site}/jobs"
+    host_url = host if host.startswith("http") else f"https://{host}"
+    url = f"{host_url}/wday/cxs/{tenant}/{site}/jobs"
     headers = {
         "Content-Type": "application/json",
         "Accept": "application/json",
@@ -28,9 +31,12 @@ def scrape_workday_instance(
     }
 
     queries = search_queries if search_queries else ["software engineer", "intern"]
-    applied_facets: Dict[str, Any] = {}
-    if country_facets:
-        applied_facets["locationCountry"] = country_facets
+    facets: Dict[str, Any] = {}
+    if applied_facets:
+        facets.update(applied_facets)
+    elif country_facets:
+        param_name = facet_param or "locationCountry"
+        facets[param_name] = country_facets
 
     seen_ids = set()
 
@@ -40,7 +46,7 @@ def scrape_workday_instance(
             limit = 20
             while offset < 100:  # Cap at top 100 jobs per query for speed and rate limits
                 payload = {
-                    "appliedFacets": applied_facets,
+                    "appliedFacets": facets,
                     "limit": limit,
                     "offset": offset,
                     "searchText": q
